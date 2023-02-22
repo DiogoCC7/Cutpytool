@@ -1,6 +1,7 @@
 import datetime
 import time
 import uuid
+import argparse
 
 from watchdog.observers import Observer
 from watchdog.events import PatternMatchingEventHandler
@@ -8,8 +9,8 @@ from datetime import datetime
 from os import listdir, path, makedirs
 from PIL import Image
 
-INPUT_DIR="."
-OUTPUT_DIR="dist"
+input_dir="."
+output_dir="dist"
 LEFT=70
 RIGHT=50
 TOP=150
@@ -25,7 +26,7 @@ class EventHandler(PatternMatchingEventHandler):
 
         basePath = path.basename(event.src_path)
         time.sleep(1)
-        crop(basePath, OUTPUT_DIR)
+        crop(basePath, output_dir)
 
         return super().on_created(event)
     
@@ -34,7 +35,7 @@ def watch_mode():
     event_handler = EventHandler()
 
     observer = Observer()
-    observer.schedule(event_handler, path=INPUT_DIR, recursive=True)
+    observer.schedule(event_handler, path=input_dir, recursive=True)
     print("Add Files to this folder to start cropping it")
     observer.start()
     
@@ -111,7 +112,16 @@ def crop(input_folder, output_folder):
 
 if __name__ == "__main__":
 
-    if WATCH_MODE:
+    parser = argparse.ArgumentParser(description="SLB!")
+    parser.add_argument('--watch', default=False, action="store_true")
+    parser.add_argument('-i', "--input", type=str, default=".")
+    parser.add_argument('-o', "--output", type=str, default="dist")
+    arg = parser.parse_args()
+
+    input_dir = arg.input
+    output_dir = arg.output
+
+    if arg.watch:
         watch_mode()
     else:
-        crop(INPUT_DIR, OUTPUT_DIR)
+        crop(input_dir, output_dir)
