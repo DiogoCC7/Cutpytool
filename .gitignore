@@ -1,0 +1,6 @@
+#python
+/env
+dist
+tmp
+
+*.png
