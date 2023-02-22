@@ -1,13 +1,50 @@
 import datetime
+import time
+import uuid
 
+from watchdog.observers import Observer
+from watchdog.events import PatternMatchingEventHandler
 from datetime import datetime
 from os import listdir, path, makedirs
 from PIL import Image
 
+INPUT_DIR="."
+OUTPUT_DIR="dist"
 LEFT=70
 RIGHT=50
 TOP=150
 DOWN=70
+WATCH_MODE=False
+
+class EventHandler(PatternMatchingEventHandler):
+
+    def __init__(self) -> None:
+        super(EventHandler, self).__init__(ignore_patterns=["*/*.png"])
+
+    def on_created(self, event):
+
+        basePath = path.basename(event.src_path)
+        time.sleep(1)
+        crop(basePath, OUTPUT_DIR)
+
+        return super().on_created(event)
+    
+def watch_mode():
+
+    event_handler = EventHandler()
+
+    observer = Observer()
+    observer.schedule(event_handler, path=INPUT_DIR, recursive=True)
+    print("Add Files to this folder to start cropping it")
+    observer.start()
+    
+    try:
+        while(True):
+           time.sleep(1)
+           
+    except KeyboardInterrupt:
+            observer.stop()
+            observer.join()
 
 def get_png(folder):
 
@@ -46,15 +83,35 @@ def create_dir(out):
 
     return dir
 
-def main(input_folder, output_folder):
+def persist_imgs(croped_img, path_to_dir):
 
-    i = 1
-    path_to_dir = create_dir(output_folder)
-    croped_img = crop_imgs(get_png(input_folder))
+    i = 0
+
+    if isinstance(croped_img, list) is False:
+        croped_img.save(path.join(path_to_dir, f"{uuid.uuid4()}" + ".png"))
+        print(f"Image Cropped into {path_to_dir}")
+        return
 
     for img in croped_img:
         img.save(path.join(path_to_dir, str(i) + ".png"))
         i+=1
         print(f"Image Cropped into {path_to_dir} count {i}")
 
-main("tmp", "dist")
+
+def crop(input_folder, output_folder):
+
+    path_to_dir = create_dir(output_folder)
+
+    if path.isdir(input_folder):
+        croped_img = crop_imgs(get_png(input_folder))
+    else:
+        croped_img = crop_img(input_folder)
+
+    persist_imgs(croped_img, path_to_dir)
+
+if __name__ == "__main__":
+
+    if WATCH_MODE:
+        watch_mode()
+    else:
+        crop(INPUT_DIR, OUTPUT_DIR)
