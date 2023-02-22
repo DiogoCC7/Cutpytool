@@ -2,6 +2,7 @@ import datetime
 import time
 import uuid
 import argparse
+import tomli
 
 from watchdog.observers import Observer
 from watchdog.events import PatternMatchingEventHandler
@@ -11,11 +12,10 @@ from PIL import Image
 
 input_dir="."
 output_dir="dist"
-LEFT=70
-RIGHT=50
-TOP=150
-DOWN=70
-WATCH_MODE=False
+left=70
+right=50
+top=150
+bottom=70
 
 class EventHandler(PatternMatchingEventHandler):
 
@@ -71,7 +71,7 @@ def crop_img(path_to_image: str):
     with Image.open(path_to_image) as img:
         img.load()
 
-    return img.crop((LEFT, TOP, img.size[0] - RIGHT, img.size[1] - DOWN))
+    return img.crop((left, top, img.size[0] - right, img.size[1] - bottom))
 
 
 def create_dir(out):
@@ -98,7 +98,6 @@ def persist_imgs(croped_img, path_to_dir):
         i+=1
         print(f"Image Cropped into {path_to_dir} count {i}")
 
-
 def crop(input_folder, output_folder):
 
     path_to_dir = create_dir(output_folder)
@@ -110,16 +109,30 @@ def crop(input_folder, output_folder):
 
     persist_imgs(croped_img, path_to_dir)
 
+def load_configuration(header):
+    
+    with open("./default.toml", "rb") as conf_file:
+        conf = tomli.load(conf_file)
+
+    return conf[header]
+
 if __name__ == "__main__":
 
     parser = argparse.ArgumentParser(description="SLB!")
     parser.add_argument('--watch', default=False, action="store_true")
     parser.add_argument('-i', "--input", type=str, default=".")
     parser.add_argument('-o', "--output", type=str, default="dist")
+    parser.add_argument('--conf', type=str, default="edge")
     arg = parser.parse_args()
+
+    configuration = load_configuration(arg.conf)
 
     input_dir = arg.input
     output_dir = arg.output
+    left = configuration["left"]
+    right = configuration["right"]
+    top = configuration["top"]
+    bottom = configuration["bottom"]
 
     if arg.watch:
         watch_mode()
