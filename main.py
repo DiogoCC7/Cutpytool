@@ -7,8 +7,10 @@ import tomli
 from watchdog.observers import Observer
 from watchdog.events import PatternMatchingEventHandler
 from datetime import datetime
-from os import listdir, path, makedirs
+from os import listdir, path, makedirs, system
 from PIL import Image
+
+CONFIG_FILE_PATH="default.toml"
 
 input_dir="."
 output_dir="dist"
@@ -111,24 +113,29 @@ def crop(input_folder, output_folder):
 
 def load_configuration(header):
     
-    with open("./default.toml", "rb") as conf_file:
+    with open(CONFIG_FILE_PATH, "rb") as conf_file:
         conf = tomli.load(conf_file)
 
     return conf[header]
 
+def open_configuration_file():
+    system(CONFIG_FILE_PATH)
+
 if __name__ == "__main__":
 
     parser = argparse.ArgumentParser(description="SLB!")
-    parser.add_argument('--watch', default=False, action="store_true")
-    parser.add_argument('-i', "--input", type=str, default=".")
-    parser.add_argument('-o', "--output", type=str, default="dist")
-    parser.add_argument('--conf', type=str, default="edge")
+
+    parser.add_argument('--path', default=False, action="store_true", help="change configuration")
+    parser.add_argument('--watch', default=False, action="store_true", help="listen changes on the input folder")
+    parser.add_argument('--i', type=str, default=".", help="input folder")
+    parser.add_argument('--o', type=str, default="dist", help="output folder")
+    parser.add_argument('--conf', type=str, default="edge", help="defines cutting mode, selected from configuration file")
     arg = parser.parse_args()
 
     configuration = load_configuration(arg.conf)
 
-    input_dir = arg.input
-    output_dir = arg.output
+    input_dir = arg.i
+    output_dir = arg.o
     left = configuration["left"]
     right = configuration["right"]
     top = configuration["top"]
@@ -136,5 +143,7 @@ if __name__ == "__main__":
 
     if arg.watch:
         watch_mode()
+    elif arg.path:
+        open_configuration_file()
     else:
         crop(input_dir, output_dir)
